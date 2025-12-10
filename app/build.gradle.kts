@@ -49,4 +49,16 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // WorkManager for reliable background scheduling
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // LocalBroadcastManager for in-app broadcasts
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+
+    // Lifecycle for StateFlow collection
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+
+    // Coroutines (required for StateFlow)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }

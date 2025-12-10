@@ -1,47 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center_horizontal">
 
-    <androidx.appcompat.widget.LinearLayoutCompat
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressIndicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:indeterminate="true"
+        android:layout_marginTop="48dp"
+        android:visibility="gone" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAction"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="48dp"
+        android:gravity="center_vertical">
+
+        <!-- Main Toggle: Start/Stop -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="startOrStop"/>
+            android:src="@drawable/ic_media_play"
+            android:contentDescription="Start/Stop"
+            app:fabSize="normal" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnInfo"
+        <!-- Pause/Resume (visible only when running or paused) -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnPauseResume"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="info"/>
+            android:layout_marginStart="16dp"
+            android:src="@drawable/ic_media_pause"
+            android:contentDescription="Pause/Resume"
+            android:visibility="gone"
+            app:fabSize="mini" />
 
-        <com.google.android.material.progressindicator.CircularProgressIndicator
-            android:id="@+id/progressIndicator"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:indeterminate="true"/>
+    </LinearLayout>
 
-        <TextView
-            android:id="@+id/lblInfo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Hello World!" />
+    <TextView
+        android:id="@+id/lblInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:textSize="14sp"
+        android:fontFamily="monospace"
+        android:text="Status" />
 
-    </androidx.appcompat.widget.LinearLayoutCompat>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBatteryOptimization"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:text="Enable auto-restart" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRefresh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:text="Refresh" />
 
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

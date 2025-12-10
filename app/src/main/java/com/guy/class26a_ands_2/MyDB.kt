@@ -11,6 +11,12 @@ object MyDB {
     private const val KEY_ACTUAL_STATE = "KEY_ACTUAL_STATE"
     private const val KEY_LAST_HEARTBEAT = "KEY_LAST_HEARTBEAT"
 
+    // Heartbeat interval in the service (ms)
+    const val HEARTBEAT_INTERVAL_MS = 10_000L
+
+    // Timeout = 3x heartbeat interval (allows for 2 missed heartbeats before declaring dead)
+    private const val HEARTBEAT_TIMEOUT_MS = HEARTBEAT_INTERVAL_MS * 3
+
     private fun prefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
     }
@@ -44,20 +50,22 @@ object MyDB {
         return prefs(context).getLong(KEY_LAST_HEARTBEAT, 0L)
     }
 
-    // Check if service is truly running (heartbeat within last 30 seconds)
+    // Check if service is truly running (heartbeat within timeout)
     fun isServiceAlive(context: Context): Boolean {
         val lastHeartbeat = getLastHeartbeat(context)
-        val now = System.currentTimeMillis()
-        return (now - lastHeartbeat) < 30_000L
+        if (lastHeartbeat == 0L) return false
+        val elapsed = System.currentTimeMillis() - lastHeartbeat
+        return elapsed < HEARTBEAT_TIMEOUT_MS
     }
 
     // Check if service should be running but isn't
-    fun needsRestart(context: Context): Boolean {
+    fun needsRecovery(context: Context): Boolean {
         val desired = getDesiredState(context)
-        return (desired == ServiceState.RUNNING || desired == ServiceState.PAUSED) && !isServiceAlive(context)
+        val shouldBeActive = desired == ServiceState.RUNNING || desired == ServiceState.PAUSED
+        return shouldBeActive && !isServiceAlive(context)
     }
 
-    fun clearAll(context: Context) {
-        prefs(context).edit { clear() }
+    fun clearHeartbeat(context: Context) {
+        prefs(context).edit { remove(KEY_LAST_HEARTBEAT) }
     }
 }
