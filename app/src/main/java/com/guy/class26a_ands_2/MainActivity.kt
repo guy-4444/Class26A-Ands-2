@@ -14,6 +14,21 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.guy.class26a_ands_2.databinding.ActivityMainBinding
 import kotlinx.coroutines.launch
 
+/**
+ * MainActivity - Service control interface.
+ *
+ * This activity handles:
+ * - Start/Stop service
+ * - Pause/Resume service
+ * - Display service status
+ * - Display location data (speed, coordinates, etc.)
+ * - Battery optimization settings
+ *
+ * Permission handling is done in PermissionsActivity (the launcher).
+ *
+ * DATA FLOW:
+ * LocationService → ServiceStateManager.locationData → MainActivity observes → UI updates
+ */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -32,8 +47,7 @@ class MainActivity : AppCompatActivity() {
 
         setupButtons()
         observeState()
-
-        // Handle restart action from notification
+        observeLocation()
         handleIntent()
     }
 
@@ -43,18 +57,21 @@ class MainActivity : AppCompatActivity() {
         handleIntent()
     }
 
+    /**
+     * Handle restart action from notification.
+     */
     private fun handleIntent() {
         if (intent?.action == ServiceMonitorWorker.ACTION_RESTART_SERVICE) {
-            // User tapped restart notification - we're now in foreground, so start service
             val desiredState = MyDB.getDesiredState(this)
             if (desiredState == ServiceState.RUNNING || desiredState == ServiceState.PAUSED) {
                 Toast.makeText(this, "Restarting service...", Toast.LENGTH_SHORT).show()
                 LocationService.start(this)
                 if (desiredState == ServiceState.PAUSED) {
-                    MCT6.get().single({ LocationService.pause(this) }, 500, "restart_pause")
+                    MCT7.get().delay(500, "restart_pause") {
+                        LocationService.pause(this)
+                    }
                 }
             }
-            // Clear the action
             intent?.action = null
         }
     }
@@ -71,11 +88,12 @@ class MainActivity : AppCompatActivity() {
         updateUI(ServiceStateManager.state.value)
     }
 
+    // ===== Button Setup =====
+
     private fun setupButtons() {
         // Main toggle button: Start/Stop
         binding.btnToggle.setOnClickListener {
-            val currentState = ServiceStateManager.state.value
-            when (currentState) {
+            when (ServiceStateManager.state.value) {
                 ServiceState.STOPPED -> {
                     MyDB.setDesiredState(this, ServiceState.RUNNING)
                     LocationService.start(this)
@@ -89,8 +107,7 @@ class MainActivity : AppCompatActivity() {
 
         // Pause/Resume button
         binding.btnPauseResume.setOnClickListener {
-            val currentState = ServiceStateManager.state.value
-            when (currentState) {
+            when (ServiceStateManager.state.value) {
                 ServiceState.RUNNING -> {
                     MyDB.setDesiredState(this, ServiceState.PAUSED)
                     LocationService.pause(this)
@@ -112,19 +129,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ===== Battery Optimization =====
+
     private fun showBatteryOptimizationDialog() {
         val isExempt = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this)
 
         if (isExempt) {
             AlertDialog.Builder(this)
                 .setTitle("Battery Optimization")
-                .setMessage("✓ App is already exempted from battery optimization.\n\nAuto-restart after crash is enabled.")
+                .setMessage("✓ App is exempted from battery optimization.\n\nAuto-restart after crash is enabled.")
                 .setPositiveButton("OK", null)
                 .show()
         } else {
             AlertDialog.Builder(this)
                 .setTitle("Enable Auto-Restart")
-                .setMessage("To allow the app to automatically restart the service after a crash, you need to disable battery optimization.\n\nThis helps keep the service running reliably.")
+                .setMessage("To allow the app to automatically restart the service after a crash, disable battery optimization.\n\nThis helps keep the service running reliably.")
                 .setPositiveButton("Open Settings") { _, _ ->
                     BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(this)
                 }
@@ -132,6 +151,8 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
     }
+
+    // ===== State Observation =====
 
     private fun observeState() {
         lifecycleScope.launch {
@@ -143,24 +164,69 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ===== Location Observation =====
+
+    private fun observeLocation() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ServiceStateManager.locationData.collect { locationData ->
+                    updateLocationUI(locationData)
+                }
+            }
+        }
+    }
+
+    /**
+     * Update UI with location data.
+     */
+    private fun updateLocationUI(data: LocationData?) {
+        if (data == null) {
+            // No location data - hide or show default values
+            binding.lblSpeed.text = "-- km/h"
+            binding.lblCoordinates.text = "Lat: --\nLng: --"
+            binding.lblLocationInfo.text = "Waiting for location..."
+            return
+        }
+
+        // Update speed display
+        binding.lblSpeed.text = "%.1f km/h".format(data.speedKmh)
+
+        // Update coordinates
+        binding.lblCoordinates.text = "Lat: %.6f\nLng: %.6f".format(
+            data.latitude,
+            data.longitude
+        )
+
+        // Update additional info
+        binding.lblLocationInfo.text = buildString {
+            appendLine("Location #${data.locationCount}")
+            appendLine("Accuracy: %.1f m".format(data.accuracy))
+            appendLine("Altitude: %.1f m".format(data.altitude))
+            appendLine("Bearing: %.0f°".format(data.bearing))
+        }
+    }
+
     private fun updateUI(state: ServiceState) {
         when (state) {
             ServiceState.STOPPED -> {
                 binding.btnToggle.setImageResource(R.drawable.ic_media_play)
                 binding.btnPauseResume.visibility = View.GONE
                 binding.progressIndicator.visibility = View.GONE
+                binding.locationCard.visibility = View.GONE
             }
             ServiceState.RUNNING -> {
                 binding.btnToggle.setImageResource(R.drawable.ic_media_stop)
                 binding.btnPauseResume.visibility = View.VISIBLE
                 binding.btnPauseResume.setImageResource(R.drawable.ic_media_pause)
                 binding.progressIndicator.visibility = View.VISIBLE
+                binding.locationCard.visibility = View.VISIBLE
             }
             ServiceState.PAUSED -> {
                 binding.btnToggle.setImageResource(R.drawable.ic_media_stop)
                 binding.btnPauseResume.visibility = View.VISIBLE
                 binding.btnPauseResume.setImageResource(R.drawable.ic_media_play)
                 binding.progressIndicator.visibility = View.GONE
+                binding.locationCard.visibility = View.VISIBLE
             }
         }
 
@@ -181,10 +247,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Update battery optimization button appearance
-        if (batteryOptExempt) {
-            binding.btnBatteryOptimization.text = "✓ Auto-restart enabled"
+        binding.btnBatteryOptimization.text = if (batteryOptExempt) {
+            "✓ Auto-restart enabled"
         } else {
-            binding.btnBatteryOptimization.text = "Enable auto-restart"
+            "Enable auto-restart"
         }
     }
 }

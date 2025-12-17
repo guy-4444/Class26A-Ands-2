@@ -9,19 +9,21 @@
     android:padding="16dp"
     android:gravity="center_horizontal">
 
+    <!-- Progress indicator (visible when running) -->
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progressIndicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:indeterminate="true"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="24dp"
         android:visibility="gone" />
 
+    <!-- Control buttons -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="24dp"
         android:gravity="center_vertical">
 
         <!-- Main Toggle: Start/Stop -->
@@ -46,23 +48,89 @@
 
     </LinearLayout>
 
+    <!-- Location Card (visible when running or paused) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/locationCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:visibility="gone"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Speed Display -->
+            <TextView
+                android:id="@+id/lblSpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-- km/h"
+                android:textSize="48sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="?attr/colorPrimary" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="12dp"
+                android:background="?attr/colorOutline" />
+
+            <!-- Coordinates -->
+            <TextView
+                android:id="@+id/lblCoordinates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Lat: --\nLng: --"
+                android:textSize="16sp"
+                android:fontFamily="monospace"
+                android:gravity="center" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="12dp"
+                android:background="?attr/colorOutline" />
+
+            <!-- Additional Location Info -->
+            <TextView
+                android:id="@+id/lblLocationInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Waiting for location..."
+                android:textSize="14sp"
+                android:fontFamily="monospace"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Status info -->
     <TextView
         android:id="@+id/lblInfo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:textSize="14sp"
+        android:layout_marginTop="24dp"
+        android:textSize="12sp"
         android:fontFamily="monospace"
         android:text="Status" />
 
+    <!-- Battery optimization button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnBatteryOptimization"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="16dp"
         style="@style/Widget.Material3.Button.TonalButton"
         android:text="Enable auto-restart" />
 
+    <!-- Refresh button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnRefresh"
         android:layout_width="wrap_content"

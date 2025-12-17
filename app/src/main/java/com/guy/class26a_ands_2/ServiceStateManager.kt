@@ -8,23 +8,53 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Centralized service state management with reactive updates.
+ *
+ * Uses StateFlow for UI observation - when state changes, UI updates automatically.
+ *
+ * This is a singleton object, so the state is shared across the entire app.
  */
 object ServiceStateManager {
 
     private const val TAG = "ServiceStateManager"
 
+    // ===== Service State =====
     private val _state = MutableStateFlow(ServiceState.STOPPED)
     val state: StateFlow<ServiceState> = _state.asStateFlow()
 
+    // ===== Service Process Running =====
     private val _isServiceProcessRunning = MutableStateFlow(false)
     val isServiceProcessRunning: StateFlow<Boolean> = _isServiceProcessRunning.asStateFlow()
 
+    // ===== Location Data =====
+    private val _locationData = MutableStateFlow<LocationData?>(null)
+    val locationData: StateFlow<LocationData?> = _locationData.asStateFlow()
+
+    /**
+     * Update the current state. Called by LocationService when state changes.
+     */
     fun updateState(newState: ServiceState) {
         _state.value = newState
     }
 
+    /**
+     * Mark whether the service process is running. Called in Service.onCreate/onDestroy.
+     */
     fun setServiceProcessRunning(running: Boolean) {
         _isServiceProcessRunning.value = running
+    }
+
+    /**
+     * Update location data. Called by LocationService when new location is received.
+     */
+    fun updateLocation(data: LocationData) {
+        _locationData.value = data
+    }
+
+    /**
+     * Clear location data. Called when service stops.
+     */
+    fun clearLocation() {
+        _locationData.value = null
     }
 
     /**
@@ -50,7 +80,6 @@ object ServiceStateManager {
         val desiredState = MyDB.getDesiredState(context)
         Log.d(TAG, "Recovery needed - desired state: $desiredState")
 
-        // We're being called from foreground (Activity), so we CAN start service
         return try {
             when (desiredState) {
                 ServiceState.RUNNING -> {
@@ -58,10 +87,11 @@ object ServiceStateManager {
                     true
                 }
                 ServiceState.PAUSED -> {
+                    // Start first, then pause after short delay
                     LocationService.start(context)
-                    MCT6.get().single({
+                    MCT7.get().delay(500, "recover_pause") {
                         LocationService.pause(context)
-                    }, 500, "recover_pause")
+                    }
                     true
                 }
                 ServiceState.STOPPED -> false
@@ -70,13 +100,5 @@ object ServiceStateManager {
             Log.e(TAG, "Failed to recover service", e)
             false
         }
-    }
-
-    /**
-     * Check if auto-restart from background is possible.
-     * Returns true if battery optimization is disabled for the app.
-     */
-    fun canAutoRestartFromBackground(context: Context): Boolean {
-        return BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
     }
 }

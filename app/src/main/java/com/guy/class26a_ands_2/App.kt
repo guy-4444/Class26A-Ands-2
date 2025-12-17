@@ -8,14 +8,15 @@ class App : Application() {
         super.onCreate()
 
         // Initialize timer helper
-        MCT6.initHelper()
+        MCT7.init()
 
-        // Schedule periodic service monitor
-        // Note: Monitor can only NOTIFY user to restart, not auto-restart (Android 12+ restriction)
+        // Schedule periodic service monitor (checks if service crashed)
+        // Note: On Android 12+, monitor can only NOTIFY user to restart,
+        // it cannot auto-restart services from background.
         ServiceMonitorWorker.schedule(this)
 
-        // Note: We do NOT attempt crash recovery here because Application context
-        // is considered "background" and we cannot start foreground services from here
-        // on Android 12+. Recovery happens in MainActivity.onResume() instead.
+        // Note: Crash recovery happens in MainActivity.onResume() because
+        // Application context is "background" and cannot start foreground
+        // services on Android 12+.
     }
 }

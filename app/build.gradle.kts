@@ -5,9 +5,7 @@ plugins {
 
 android {
     namespace = "com.guy.class26a_ands_2"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.guy.class26a_ands_2"
@@ -51,14 +49,14 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // WorkManager for reliable background scheduling
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-
-    // LocalBroadcastManager for in-app broadcasts
-    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
 
     // Lifecycle for StateFlow collection
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
     // Coroutines (required for StateFlow)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+    implementation(libs.play.services.location)
+
 }

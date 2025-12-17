@@ -2,19 +2,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Network (if your service needs it) -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.VIBRATE"/>
+
+    <!-- Notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Location permissions -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
+    <!-- Foreground service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
+    <!-- Wake lock - keeps CPU running when screen is off -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Boot restart -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <!-- Battery optimization dialog -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <application
@@ -28,9 +37,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Class26AAnds2">
 
+        <!-- Permissions Activity (LAUNCHER) -->
         <activity
-            android:name=".MainActivity"
-            android:launchMode="singleTop"
+            android:name=".PermissionsActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -38,12 +47,20 @@
             </intent-filter>
         </activity>
 
+        <!-- Main Activity (service control) -->
+        <activity
+            android:name=".MainActivity"
+            android:launchMode="singleTop"
+            android:exported="false" />
+
+        <!-- Foreground Service -->
         <service
             android:name=".LocationService"
             android:foregroundServiceType="location"
             android:enabled="true"
             android:exported="false" />
 
+        <!-- Boot Receiver - restarts service after device boot -->
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"

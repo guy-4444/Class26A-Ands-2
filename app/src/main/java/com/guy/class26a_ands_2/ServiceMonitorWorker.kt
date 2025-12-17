@@ -15,10 +15,22 @@ import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
 
 /**
- * Monitors if service should be running but isn't.
+ * ServiceMonitorWorker - Monitors if service crashed and notifies user.
  *
- * IMPORTANT: On Android 12+, WorkManager CANNOT start foreground services from background.
- * We can only show a notification asking the user to restart.
+ * WHY USE WORKMANAGER?
+ * - WorkManager tasks survive app crashes and device reboots
+ * - Runs even when app is not in foreground
+ * - Perfect for periodic monitoring tasks
+ *
+ * WHAT IT DOES:
+ * 1. Runs every 15 minutes (minimum allowed by WorkManager)
+ * 2. Checks if service should be running but isn't (crashed)
+ * 3. Shows notification asking user to restart (can't auto-restart on Android 12+)
+ *
+ * ANDROID 12+ LIMITATION:
+ * - WorkManager CANNOT start foreground services from background
+ * - We can only notify user and let them tap to restart
+ * - This is by design to improve user privacy and battery life
  */
 class ServiceMonitorWorker(
     context: Context,
@@ -31,23 +43,30 @@ class ServiceMonitorWorker(
         private const val WARNING_CHANNEL_ID = "com.guy.class26a_ands_2.WARNING_CHANNEL"
         private const val WARNING_NOTIFICATION_ID = 171
 
-        // Action for notification button
+        // Action that MainActivity handles to restart service
         const val ACTION_RESTART_SERVICE = "com.guy.class26a_ands_2.ACTION_RESTART_SERVICE"
 
+        /**
+         * Schedule the periodic monitor. Call once during app startup.
+         */
         fun schedule(context: Context) {
             Log.d(TAG, "Scheduling periodic monitor")
 
+            // Minimum interval is 15 minutes
             val request = PeriodicWorkRequestBuilder<ServiceMonitorWorker>(
                 15, TimeUnit.MINUTES
             ).build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.KEEP,  // Don't replace if already scheduled
                 request
             )
         }
 
+        /**
+         * Cancel the monitor. Call if you want to stop monitoring.
+         */
         fun cancel(context: Context) {
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         }
@@ -62,16 +81,16 @@ class ServiceMonitorWorker(
         Log.d(TAG, "Desired: $desiredState, Alive: $isAlive")
 
         when {
-            // Service should be running but crashed
+            // Service crashed - show notification
             MyDB.needsRecovery(applicationContext) -> {
                 Log.d(TAG, "Service crashed - showing restart notification")
                 showRestartNotification()
             }
-            // User stopped - dismiss any warning
+            // User stopped service - dismiss any warning
             desiredState == ServiceState.STOPPED -> {
                 dismissWarningNotification()
             }
-            // All good
+            // All good - dismiss any old warnings
             else -> {
                 dismissWarningNotification()
             }
@@ -81,13 +100,13 @@ class ServiceMonitorWorker(
     }
 
     /**
-     * Shows notification with action button to restart service.
-     * User must tap to restart - we cannot auto-start from background on Android 12+.
+     * Shows notification asking user to restart the service.
+     * User must tap to restart - we cannot auto-restart from background.
      */
     private fun showRestartNotification() {
         createWarningChannel()
 
-        // Intent to open MainActivity (which will check and recover)
+        // Intent to open MainActivity with restart action
         val openAppIntent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             action = ACTION_RESTART_SERVICE
@@ -106,7 +125,7 @@ class ServiceMonitorWorker(
                 .bigText("The location service stopped unexpectedly. Tap this notification to restart it."))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setAutoCancel(true)  // Dismiss when tapped
             .build()
 
         applicationContext.getSystemService(NotificationManager::class.java)
@@ -122,7 +141,7 @@ class ServiceMonitorWorker(
         val channel = NotificationChannel(
             WARNING_CHANNEL_ID,
             "Service Warnings",
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_HIGH  // Makes notification more prominent
         ).apply {
             description = "Warnings when service stops unexpectedly"
         }
